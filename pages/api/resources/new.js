@@ -10,17 +10,17 @@ const client = new faunadb.Client({
 export default async function (req, res) {
   try {
     const { from, to } = getRoute(req.query)
-    const asset = buildAsset(await req.body)
-    const notionResponse = await sendToNotion(asset)
+    const cloudinaryAsset = buildAsset(await req.body)
+    const notionResponse = await sendToNotion(cloudinaryAsset)
     const resource = await storeInFauna({
-      ...asset,
-      notionId: notionResponse.id
+      cloudinary: { ...cloudinaryAsset },
+      notion: { ...notionResponse }
     })
 
-    res.send(resource)
-  } catch (err) {
-    console.error(err)
-    res.send(err)
+    res.status(201).json({ resource })
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ error })
   }
 }
 

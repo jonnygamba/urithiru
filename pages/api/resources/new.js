@@ -14,7 +14,11 @@ export default async function (req, res) {
     const notionResponse = await sendToNotion(cloudinaryAsset)
     const resource = await storeInFauna({
       cloudinary: { ...cloudinaryAsset },
-      notion: { ...notionResponse }
+      notion: {
+        id: notionResponse.id,
+        parent: notionResponse.parent,
+        name: notionResponse.properties.Name.title[0].text.content
+      }
     })
 
     res.status(201).json({ resource })

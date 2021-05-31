@@ -1,18 +1,13 @@
 import { keys, pickAll } from 'ramda'
 import { object, string, create, array } from 'superstruct'
-import faunadb from 'faunadb'
-const q = faunadb.query
-
-const client = new faunadb.Client({
-  secret: process.env.FAUNA_KEY
-})
+import { faunadb } from '../../../src/faunadb'
 
 export default async function (req, res) {
   try {
     const { from, to } = getRoute(req.query)
     const cloudinaryAsset = buildAsset(await req.body)
     const notionResponse = await sendToNotion(cloudinaryAsset)
-    const resource = await storeInFauna({
+    const resource = await faunadb.storeItem({
       cloudinary: { ...cloudinaryAsset },
       notion: { ...notionResponse }
     })
@@ -91,8 +86,4 @@ async function sendToNotion (asset) {
   } catch (err) {
     console.log(err)
   }
-}
-
-async function storeInFauna (item) {
-  return await client.query(q.Create(q.Collection('items'), { data: item }))
 }

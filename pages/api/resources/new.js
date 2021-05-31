@@ -1,15 +1,16 @@
-import { keys, pickAll } from 'ramda'
-import { object, string, create, array } from 'superstruct'
 import { faunadb } from '../../../src/faunadb'
+import buildFromCloudinary from '../../../src/adapters/cloudinary'
+import { notion } from '../../../src/notion'
 
 export default async function (req, res) {
   try {
-    const { from, to } = getRoute(req.query)
-    const cloudinaryAsset = buildAsset(await req.body)
-    const notionResponse = await sendToNotion(cloudinaryAsset)
+    // const { from, to } = getRoute(req.query)
+    const asset = buildFromCloudinary(await req.body)
+    const response = await notion.addTask(asset)
+
     const resource = await faunadb.storeItem({
-      cloudinary: { ...cloudinaryAsset },
-      notion: { ...notionResponse }
+      cloudinary: { ...asset },
+      notion: { ...response }
     })
 
     res.status(201).json({ resource })
@@ -19,71 +20,7 @@ export default async function (req, res) {
   }
 }
 
-function getRoute (query) {
-  const Route = object({ from: string(), to: string() })
-  return create(query, Route)
-}
-
-function buildAsset (input) {
-  const requiredProps = {
-    metadata: object(),
-    public_id: string(),
-    secure_url: string(),
-    tags: array(),
-    asset_id: string()
-  }
-
-  const Asset = object(requiredProps)
-  const pickOnlyRequiredValues = pickAll(keys(requiredProps))
-
-  return create(pickOnlyRequiredValues(input), Asset)
-}
-
-async function sendToNotion (asset) {
-  const notionObject = {
-    parent: { database_id: '24a2356964104481ac700d0ad77148c0' },
-    properties: {
-      Name: {
-        title: [{ text: { content: Date.now().toString() } }]
-      },
-      Description: {
-        rich_text: [{ text: { content: asset.metadata.metadata_ocr } }]
-      },
-      Url: {
-        rich_text: [{ text: { content: asset.metadata.metadata_url } }]
-      }
-    },
-    children: [
-      {
-        object: 'block',
-        type: 'paragraph',
-        paragraph: {
-          text: [
-            {
-              type: 'text',
-              text: {
-                content: asset.secure_url
-              }
-            }
-          ]
-        }
-      }
-    ]
-  }
-
-  try {
-    const resource = await fetch('https://api.notion.com/v1/pages', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${process.env.NOTION_KEY}`,
-        'Content-Type': 'application/json',
-        'Notion-Version': '2021-05-13'
-      },
-      body: JSON.stringify(notionObject)
-    })
-
-    return await resource.json()
-  } catch (err) {
-    console.log(err)
-  }
-}
+// function getRoute (query) {
+//   const Route = object({ from: string(), to: string() })
+//   return create(query, Route)
+// }

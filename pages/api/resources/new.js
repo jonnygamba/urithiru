@@ -1,26 +1,32 @@
-import { pipe } from 'ramda'
+import { pipe, path } from 'ramda'
 import from from '../../../src/from'
-import Notion from '../../../src/notion'
+import notion from '../../../src/notion'
+import { faunadb } from '../../../src/faunadb'
+
+const storeInNotion = notion('https://api.notion.com/v1/pages')
 
 export default async function (req, res) {
   try {
     const data = await req.body
-    const normalizeFromCloudinary = pipe(from('cloudinary'), normalize)
-    await new Notion(normalizeFromCloudinary(data)).store()
+    const notionResponse = await pipe(
+      from('cloudinary'),
+      normalize,
+      storeInNotion
+    )(data)
 
-    // const resource = await faunadb.storeItem({
-    //   cloudinary: { ...asset },
-    //   notion: {
-    //     id: response.id,
-    //     parent: response.parent,
-    //     name: path(
-    //       ['properties', 'Name', 'title', 0, 'text', ''],
-    //       response
-    //     )
-    //   }
-    // })
+    const resource = await faunadb.storeItem({
+      cloudinary: { ...data },
+      notion: {
+        id: notionResponse.id,
+        parent: notionResponse.parent,
+        name: path(
+          ['properties', 'Name', 'title', 0, 'text', ''],
+          notionResponse
+        )
+      }
+    })
 
-    res.status(201).json({ tews: 'skhh' })
+    res.status(201).json(resource)
   } catch (error) {
     console.error(error)
     res.status(500).json({ error })

@@ -1,21 +1,18 @@
 import { assert, object, string } from 'superstruct'
 
-export default class {
-  constructor (data) {
-    this.data = parse(data)
-    console.log(this.data, 'data')
-    this.headers = {
-      Authorization: `Bearer ${process.env.NOTION_KEY}`,
-      'Content-Type': 'application/json',
-      'Notion-Version': '2021-05-13'
-    }
+export default function (url) {
+  const headers = {
+    Authorization: `Bearer ${process.env.NOTION_KEY}`,
+    'Content-Type': 'application/json',
+    'Notion-Version': '2021-05-13'
   }
 
-  async store () {
-    const resource = await fetch('https://api.notion.com/v1/pages', {
+  return async function (input) {
+    const data = parse(input)
+    const resource = await fetch(url, {
       method: 'POST',
-      headers: this.headers,
-      body: JSON.stringify(this.data)
+      headers: headers,
+      body: JSON.stringify(data)
     })
 
     return await resource.json()

@@ -4,6 +4,7 @@ import notion from '../../../src/notion'
 import { faunadb } from '../../../src/faunadb'
 
 const storeInNotion = notion('https://api.notion.com/v1/pages')
+const storeInFaunadb = faunadb()
 
 export default async function (req, res) {
   try {
@@ -14,13 +15,13 @@ export default async function (req, res) {
       storeInNotion
     )(data)
 
-    const resource = await faunadb.storeItem({
+    const resource = await storeInFaunadb({
       cloudinary: { ...data },
       notion: {
         id: notionResponse.id,
         parent: notionResponse.parent,
         name: path(
-          ['properties', 'Name', 'title', 0, 'text', ''],
+          ['properties', 'Name', 'title', 0, 'text', 'content'],
           notionResponse
         )
       }

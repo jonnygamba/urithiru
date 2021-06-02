@@ -1,19 +1,17 @@
 import faunaDB from 'faunadb'
 import { add as addNewItem } from './queries/item'
 
-class QueryManager {
-  constructor (token) {
-    this.bootstrapToken = token || process.env.FAUNA_KEY
-    this.client = new faunaDB.Client({
-      secret: token || this.bootstrapToken
-    })
-  }
+function queryManager (token) {
+  const bootstrapToken = token || process.env.FAUNA_KEY
+  const client = new faunaDB.Client({
+    secret: token || bootstrapToken
+  })
 
-  async storeItem (data) {
-    return await addNewItem(this.client, data)
+  return async function (data) {
+    return await addNewItem(client, data)
   }
 }
 
-const faunadb = new QueryManager()
+const faunadb = queryManager()
 
-export { faunadb, QueryManager }
+export { faunadb, queryManager }
